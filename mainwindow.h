@@ -44,13 +44,13 @@ private slots:
 
     void on_actionSave_triggered();
 
-    void on_actionOpen_LR_file_triggered();
-
     void on_treeWidget_itemChanged(QTreeWidgetItem *item, int column);
 
     void on_bGoogle_clicked();
 
     void on_bPaste_clicked();
+
+    void on_lineEdit_returnPressed();
 
 private:
 
@@ -78,6 +78,7 @@ private:
     CommandState m_command;
     Babylon *m_babylon;
     QList<QString> m_dictionaryList;
+    QMap<QString,QString> m_dict;
 
     //ui
     Ui::MainWindow *ui;

@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
     readMemoryFile(m_memoryPath);
     ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
 
-    QString fileText = QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.*)");
+    QString fileText = QString("mtBab_FV_Edition_1.0_beta.bgl");//QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.*)");
     if (fileText.isEmpty()) return;
     ui->treeWidget->clear();
 
@@ -62,6 +62,7 @@ bool MainWindow::convert()
         //m_builder->addHeadword( entry.headword.c_str(), entry.definition.c_str(), entry.alternates );
 
         m_dictionaryList.append(QString(entry.headword.c_str()));
+        m_dict[QString(entry.headword.c_str())] = QString(entry.definition.c_str());
         entry = m_babylon->readEntry();
         //count++;
         //if (count > 10) break;
@@ -77,7 +78,7 @@ bool MainWindow::convert()
 */
 void MainWindow::on_actionOpen_triggered()
 {
-    QString fileText = QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.txt *.srt *.lrt)");
+    QString fileText = QFileDialog::getOpenFileName(this, "Open E-book", "E:/Documents", "Text File (*.txt *.srt *.lrt)");
     if (fileText.isEmpty()) return;
     ui->treeWidget->clear();
     if (fileText.split(".").last()=="lrt"){//get extension
@@ -288,9 +289,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             break;
         }
         case Qt::Key_T: on_bTranslate_clicked(); break;
-        case Qt::Key_U: on_bUndo_clicked(); break;
+        case Qt::Key_Z: on_bUndo_clicked(); break;
         case Qt::Key_Delete: on_bRemove_clicked(); break;
-        case Qt::Key_K: on_bKnow_clicked(); break;
+        case Qt::Key_Space: on_bKnow_clicked(); break;
     }
 }
 
@@ -301,9 +302,7 @@ void MainWindow::on_bRemoveInFile_clicked()
 
 void MainWindow::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column)
 {
-    if (column==0) {
-            ui->treeWidget->editItem(item, column);
-        }
+    ui->textBrowser->setHtml(m_dict[item->text(0)]);
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -312,24 +311,6 @@ void MainWindow::on_actionSave_triggered()
     if (fileText.isEmpty()) return;
     LanguageReadingFile file(fileText);
     file.write(ui->treeWidget);
-}
-
-void MainWindow::on_actionOpen_LR_file_triggered()
-{
-    QString fileText = QFileDialog::getOpenFileName(this, "Open LR File", "E:/Documents", "Language Reading Text (*.lrt)");
-    if (fileText.isEmpty()) return;
-    LanguageReadingFile file(fileText);
-    QMap<QString,int> map = file.read();
-    ui->treeWidget->clear();
-    for (QMap<QString,int>::iterator it=map.begin(); it!=map.end(); ++it){
-        if (m_memoryList.indexOf(it.key())>=0) continue;
-        QTreeWidgetItem *item = new QTreeWidgetItem;
-        item->setFlags(item->flags() | Qt::ItemIsEditable);
-        item->setText(0,it.key());
-        item->setData(1, Qt::DisplayRole, it.value());
-        ui->treeWidget->addTopLevelItem(item);
-    }
-    ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
 }
 
 void MainWindow::on_treeWidget_itemChanged(QTreeWidgetItem *item, int column)
@@ -390,4 +371,27 @@ void MainWindow::on_bPaste_clicked()
 
     }
     ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+}
+
+void MainWindow::on_lineEdit_returnPressed()
+{
+    QString lookup = m_dict[ui->lineEdit->text()];
+    if (lookup != ""){
+        QTreeWidgetItem *item = new QTreeWidgetItem;
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        item->setText(0,ui->lineEdit->text());
+        item->setData(1, Qt::DisplayRole, 1);
+        ui->treeWidget->addTopLevelItem(item);
+
+        ui->textBrowser->setHtml(lookup);
+
+    }
+    else{
+        QMessageBox::StandardButton answer = QMessageBox::question(this, tr("Google it?"),"Word not found, google it?");
+        if (answer == QMessageBox::Yes){
+            QString link = QString("https://www.google.com/#q=")+ui->lineEdit->text();
+            QUrl url(link);
+            QDesktopServices::openUrl(url);
+        }
+    }
 }

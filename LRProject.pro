@@ -55,6 +55,6 @@ HEADERS  += mainwindow.h \
 
 FORMS   += mainwindow.ui
 
-#RC_FILE = LRProject.rc
+ICON = LRProject.ico
 
 win32:LIBS += -liconv
