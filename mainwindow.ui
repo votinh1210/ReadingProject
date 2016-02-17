@@ -196,6 +196,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen"/>
+    <addaction name="actionAdd_a_dictionary"/>
     <addaction name="actionSave"/>
     <addaction name="actionExit"/>
    </widget>
@@ -220,6 +221,11 @@
   <action name="actionSave">
    <property name="text">
     <string>Save to LR file</string>
+   </property>
+  </action>
+  <action name="actionAdd_a_dictionary">
+   <property name="text">
+    <string>Add a dictionary</string>
    </property>
   </action>
  </widget>

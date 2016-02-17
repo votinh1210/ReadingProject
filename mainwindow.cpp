@@ -6,6 +6,7 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QClipboard>
+#include <QxtGlobalShortcut>
 #include "languagereadingfile.h"
 
 
@@ -394,4 +395,12 @@ void MainWindow::on_lineEdit_returnPressed()
             QDesktopServices::openUrl(url);
         }
     }
+}
+
+void MainWindow::on_actionAdd_a_dictionary_triggered()
+{
+    QString fileText = QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.*)");
+    if (fileText.isEmpty()) return;
+    m_babylon = new Babylon(fileText.toUtf8().constData());
+    convert();
 }

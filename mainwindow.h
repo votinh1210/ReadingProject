@@ -52,6 +52,8 @@ private slots:
 
     void on_lineEdit_returnPressed();
 
+    void on_actionAdd_a_dictionary_triggered();
+
 private:
 
     enum CommandState{
