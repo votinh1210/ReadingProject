@@ -57,6 +57,15 @@ private slots:
     void on_lineEdit_returnPressed();
 
     void on_actionAdd_a_dictionary_triggered();
+	
+  /// For receiving message from scan libraries
+protected:
+	unsigned gdAskMessage;
+public:
+	bool handleGDMessage( MSG * message, long * result );
+private slots:
+  /// Return true while scanning GoldenDict window
+  bool isGoldenDictWindow( HWND hwnd );
 
 private:
 
@@ -86,10 +95,10 @@ private:
     QList<QString> m_dictionaryList;
     QMap<QString,QString> m_dict;
     sptr< HotkeyWrapper > hotkeyWrapper;
+    void installHotKeys();
 
     //ui
     Ui::MainWindow *ui;
-    void installHotKeys();
 };
 
 #endif // MAINWINDOW_H

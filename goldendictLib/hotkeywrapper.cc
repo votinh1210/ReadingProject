@@ -406,13 +406,13 @@ bool QHotkeyApplication::nativeEventFilter( const QByteArray & /*eventType*/, vo
         return true;
     }
   }
-/*
+
   if( mainWindow )
   {
     if( ( static_cast< MainWindow * >( mainWindow ) )->handleGDMessage( msg, result ) )
       return true;
   }
-*/
+
   return false;
 }
 

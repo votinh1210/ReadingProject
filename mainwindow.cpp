@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     readMemoryFile(m_memoryPath);
     ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
 
+    gdAskMessage = RegisterWindowMessage( L"GOLDENDICT_GET_WORD_IN_COORDINATES" );
+	( static_cast< QHotkeyApplication * >( qApp ) )->setMainWindow( this );
     installHotKeys();
     QString fileText = QString("mtBab_FV_Edition_1.0_beta.bgl");//QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.*)");
     if (fileText.isEmpty()) return;
@@ -355,6 +357,7 @@ void MainWindow::on_bPaste_clicked()
         if (fields[i].length()<3) continue;
         fields[i] = fields[i].toLower();
         if (m_memoryList.indexOf(fields[i])>=0) continue;
+        if (m_dictionaryList.indexOf(fields[i])<0) continue;
         QTreeWidgetItem* item;
         item = new QTreeWidgetItem();
         item->setFlags(item->flags() | Qt::ItemIsEditable);
@@ -442,4 +445,34 @@ void MainWindow::installHotKeys()
 void MainWindow::hotKeyActivated( int hk )
 {
     QMessageBox::question(this, tr("Google it?"),"Word not found, google it?" + QString(hk));
+}
+
+bool MainWindow::handleGDMessage( MSG * message, long * result )
+{
+  if( message->message != gdAskMessage )
+    return false;
+  *result = 0;
+
+  if( !isGoldenDictWindow( message->hwnd ) )
+    return true;
+	/*
+  ArticleView * view = getCurrentArticleView();
+  if( !view )
+    return true;
+
+  LPGDDataStruct lpdata = ( LPGDDataStruct ) message->lParam;
+
+  QString str = view->wordAtPoint( lpdata->Pt.x, lpdata->Pt.y );
+
+  memset( lpdata->cwData, 0, lpdata->dwMaxLength * sizeof( WCHAR ) );
+  str.truncate( lpdata->dwMaxLength - 1 );
+  str.toWCharArray( lpdata->cwData );
+*/
+  *result = 1;
+  return true;
+}
+
+bool MainWindow::isGoldenDictWindow( HWND hwnd )
+{
+  return hwnd == (HWND)winId() || hwnd == (HWND)ui->centralWidget->winId();
 }

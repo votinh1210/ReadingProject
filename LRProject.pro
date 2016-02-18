@@ -6,9 +6,6 @@
 
 QT       += core gui network xml
 
-CONFIG += qxt
-QXT = gui core network
-
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = LRProject
