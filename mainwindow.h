@@ -5,6 +5,8 @@
 #include <QTreeWidgetItem>
 #include <QKeyEvent>
 #include "goldendictLib/bgl_babylon.hh"
+#include "goldendictLib/sptr.hh"
+#include "goldendictLib/hotkeywrapper.hh"
 
 namespace Ui {
 class MainWindow;
@@ -18,6 +20,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+public slots:
+    void hotKeyActivated(int hk);
 protected:
     void keyPressEvent(QKeyEvent* event);
 
@@ -81,9 +85,11 @@ private:
     Babylon *m_babylon;
     QList<QString> m_dictionaryList;
     QMap<QString,QString> m_dict;
+    sptr< HotkeyWrapper > hotkeyWrapper;
 
     //ui
     Ui::MainWindow *ui;
+    void installHotKeys();
 };
 
 #endif // MAINWINDOW_H

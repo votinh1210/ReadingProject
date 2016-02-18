@@ -6,7 +6,7 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QClipboard>
-#include <QxtGlobalShortcut>
+//#include <QxtGlobalShortcut>
 #include "languagereadingfile.h"
 
 
@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     readMemoryFile(m_memoryPath);
     ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
 
+    installHotKeys();
     QString fileText = QString("mtBab_FV_Edition_1.0_beta.bgl");//QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.*)");
     if (fileText.isEmpty()) return;
     ui->treeWidget->clear();
@@ -403,4 +404,42 @@ void MainWindow::on_actionAdd_a_dictionary_triggered()
     if (fileText.isEmpty()) return;
     m_babylon = new Babylon(fileText.toUtf8().constData());
     convert();
+}
+
+void MainWindow::installHotKeys()
+{
+    hotkeyWrapper.reset(); // Remove the old one
+
+    try
+    {
+        hotkeyWrapper = new HotkeyWrapper( this );
+    }
+    catch( HotkeyWrapper::exInit & )
+    {
+        QMessageBox::critical( this, "GoldenDict",
+                               tr( "Failed to initialize hotkeys monitoring mechanism.<br>"
+                                   "Make sure your XServer has RECORD extension turned on." ) );
+
+        return;
+    }
+
+    hotkeyWrapper->setGlobalKey( Qt::Key_C,
+                                 Qt::Key_C,
+                                 Qt::ControlModifier,
+                                 0 );
+
+    hotkeyWrapper->setGlobalKey( Qt::Key_C,
+                                 Qt::Key_C,
+                                 Qt::ControlModifier,
+                                 1 );
+
+
+    connect( hotkeyWrapper.get(), SIGNAL( hotkeyActivated( int ) ),
+             this, SLOT( hotKeyActivated( int ) ) );
+
+}
+
+void MainWindow::hotKeyActivated( int hk )
+{
+    QMessageBox::question(this, tr("Google it?"),"Word not found, google it?" + QString(hk));
 }

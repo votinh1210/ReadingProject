@@ -32,7 +32,12 @@ SOURCES += main.cpp\
     goldendictLib/atomic_rename.cc \
     goldendictLib/wstring_qt.cc \
     goldendictLib/folding.cc \
-    goldendictLib/language.cc
+    goldendictLib/language.cc \
+    goldendictLib/hotkeywrapper.cc \
+    goldendictLib/qtsingleapplication.cpp \
+    goldendictLib/qtlocalpeer.cpp \
+    goldendictLib/qtlockedfile.cpp \
+    goldendictLib/qtlockedfile_win.cpp
 
 HEADERS  += mainwindow.h \
     languagereadingfile.h \
@@ -54,7 +59,12 @@ HEADERS  += mainwindow.h \
     goldendictLib/wstring_qt.hh \
     goldendictLib/folding.hh \
     goldendictLib/inc_case_folding.hh \
-    goldendictLib/inc_diacritic_folding.hh
+    goldendictLib/inc_diacritic_folding.hh \
+    goldendictLib/hotkeywrapper.hh \
+    goldendictLib/language.hh \
+    goldendictLib/qtsingleapplication.h \
+    goldendictLib/qtlocalpeer.h \
+    goldendictLib/qtlockedfile.h
 
 FORMS   += mainwindow.ui
 
