@@ -452,11 +452,12 @@ void MainWindow::installHotKeys()
 
 void MainWindow::hotKeyActivated( int hk )
 {
-    QString text = QApplication::clipboard()->text();
+    //QString text = QApplication::clipboard()->text();
     this->showNormal();
     this->raise();
     this->activateWindow();
-    QMessageBox::question(this, tr("Google it?"),"Word not found, google it? " + text);
+	on_bPaste_clicked();
+    //QMessageBox::question(this, tr("Google it?"),"Word not found, google it? ");
 
 }
 
