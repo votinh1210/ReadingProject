@@ -61,7 +61,8 @@ HEADERS  += mainwindow.h \
     goldendictLib/language.hh \
     goldendictLib/qtsingleapplication.h \
     goldendictLib/qtlocalpeer.h \
-    goldendictLib/qtlockedfile.h
+    goldendictLib/qtlockedfile.h \
+    dictionary.h
 
 FORMS   += mainwindow.ui
 

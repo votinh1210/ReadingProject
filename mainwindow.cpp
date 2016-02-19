@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowTitle(tr("LR - Love Reading"));
+    m_activeDict = 0;
     m_memoryPath = QString("memory.txt");//default path
     readMemoryFile(m_memoryPath);
     ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
@@ -26,12 +27,13 @@ MainWindow::MainWindow(QWidget *parent) :
     gdAskMessage = RegisterWindowMessage( L"GOLDENDICT_GET_WORD_IN_COORDINATES" );
 	( static_cast< QHotkeyApplication * >( qApp ) )->setMainWindow( this );
     installHotKeys();
+    /*
     QString fileText = QString("mtBab_FV_Edition_1.0_beta.bgl");//QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.*)");
     if (fileText.isEmpty()) return;
     ui->treeWidget->clear();
 
     m_babylon = new Babylon(fileText.toUtf8().constData());
-    convert();
+    convert();*/
 }
 
 /*
@@ -58,21 +60,25 @@ bool MainWindow::convert()
         return false;
     }
 
+    Dictionary dict;
+    dict.name = QString(m_babylon->title().c_str());
+
     bgl_entry entry;
     entry = m_babylon->readEntry();
-    m_dictionaryList.clear();
+    QMap<QString,QString> wordsList;
     while( !entry.headword.empty() )
     {
         //m_builder->addHeadword( entry.headword.c_str(), entry.definition.c_str(), entry.alternates );
 
-        m_dictionaryList.append(QString(entry.headword.c_str()));
-        m_dict[QString(entry.headword.c_str())] = QString(entry.definition.c_str());
+        //dictionaryList.append(QString(entry.headword.c_str()));
+        wordsList[QString(entry.headword.c_str())] = QString(entry.definition.c_str());
         entry = m_babylon->readEntry();
         //count++;
         //if (count > 10) break;
     }
-
     m_babylon->close();
+    dict.dict = wordsList;
+    m_dicts.append(dict);
 
     return true;
 }
@@ -123,7 +129,7 @@ void MainWindow::readFile(QString fileText){
     if (file.open(QIODevice::ReadOnly))
     {
         QTextStream in(&file);
-
+        QList<QString> dictionaryList = m_dicts[m_activeDict].dict.keys();
         while(!in.atEnd()) {
             QString line = in.readLine();
             line.replace("\'"," ");
@@ -133,7 +139,7 @@ void MainWindow::readFile(QString fileText){
                 if (fields[i].length()<3) continue;
                 fields[i] = fields[i].toLower();
                 if (m_memoryList.indexOf(fields[i])>=0) continue;
-                if (m_dictionaryList.indexOf(fields[i])<0) continue;
+                if (dictionaryList.indexOf(fields[i])<0) continue;
                 QTreeWidgetItem* item;
                 item = new QTreeWidgetItem();
                 item->setFlags(item->flags() | Qt::ItemIsEditable);
@@ -306,7 +312,7 @@ void MainWindow::on_bRemoveInFile_clicked()
 
 void MainWindow::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column)
 {
-    ui->textBrowser->setHtml(m_dict[item->text(0)]);
+    ui->textBrowser->setHtml(m_dicts[m_activeDict].dict[item->text(0)]);
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -353,11 +359,12 @@ void MainWindow::on_bPaste_clicked()
     text.remove("…");
     text.remove(QRegExp(QString::fromUtf8("[0123456789`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\\[\\\]\\\\]")));
     QStringList  fields = text.split(" ");
+    QList<QString> dictionaryList = m_dicts[m_activeDict].dict.keys();
     for (int i=0;i<fields.length();++i){
         if (fields[i].length()<3) continue;
         fields[i] = fields[i].toLower();
         if (m_memoryList.indexOf(fields[i])>=0) continue;
-        if (m_dictionaryList.indexOf(fields[i])<0) continue;
+        if (dictionaryList.indexOf(fields[i])<0) continue;
         QTreeWidgetItem* item;
         item = new QTreeWidgetItem();
         item->setFlags(item->flags() | Qt::ItemIsEditable);
@@ -380,7 +387,7 @@ void MainWindow::on_bPaste_clicked()
 
 void MainWindow::on_lineEdit_returnPressed()
 {
-    QString lookup = m_dict[ui->lineEdit->text()];
+    QString lookup = m_dicts[m_activeDict].dict[ui->lineEdit->text()];
     if (lookup != ""){
         QTreeWidgetItem *item = new QTreeWidgetItem;
         item->setFlags(item->flags() | Qt::ItemIsEditable);
@@ -407,6 +414,7 @@ void MainWindow::on_actionAdd_a_dictionary_triggered()
     if (fileText.isEmpty()) return;
     m_babylon = new Babylon(fileText.toUtf8().constData());
     convert();
+    ui->comboBox->addItem(m_dicts.last().name);
 }
 
 void MainWindow::installHotKeys()
@@ -444,7 +452,12 @@ void MainWindow::installHotKeys()
 
 void MainWindow::hotKeyActivated( int hk )
 {
-    QMessageBox::question(this, tr("Google it?"),"Word not found, google it?" + QString(hk));
+    QString text = QApplication::clipboard()->text();
+    this->showNormal();
+    this->raise();
+    this->activateWindow();
+    QMessageBox::question(this, tr("Google it?"),"Word not found, google it? " + text);
+
 }
 
 bool MainWindow::handleGDMessage( MSG * message, long * result )
@@ -475,4 +488,9 @@ bool MainWindow::handleGDMessage( MSG * message, long * result )
 bool MainWindow::isGoldenDictWindow( HWND hwnd )
 {
   return hwnd == (HWND)winId() || hwnd == (HWND)ui->centralWidget->winId();
+}
+
+void MainWindow::on_comboBox_currentIndexChanged(int index)
+{
+    m_activeDict = index;
 }

@@ -7,6 +7,12 @@
 #include "goldendictLib/bgl_babylon.hh"
 #include "goldendictLib/sptr.hh"
 #include "goldendictLib/hotkeywrapper.hh"
+//#include "dictionary.h"
+
+struct Dictionary {
+    QString                 name;
+    QMap<QString,QString>   dict;
+};
 
 namespace Ui {
 class MainWindow;
@@ -67,6 +73,8 @@ private slots:
   /// Return true while scanning GoldenDict window
   bool isGoldenDictWindow( HWND hwnd );
 
+  void on_comboBox_currentIndexChanged(int index);
+
 private:
 
     enum CommandState{
@@ -81,6 +89,7 @@ private:
     void undoCommand(CommandState com);
     void removeWordFromFile(QString word, QString fileText);
     bool convert();
+    void installHotKeys();
 
 
     //attributes
@@ -92,10 +101,10 @@ private:
     QList<CommandState> m_previousCommands;
     CommandState m_command;
     Babylon *m_babylon;
-    QList<QString> m_dictionaryList;
-    QMap<QString,QString> m_dict;
+    QList<Dictionary> m_dicts;
     sptr< HotkeyWrapper > hotkeyWrapper;
-    void installHotKeys();
+    int m_activeDict;
+
 
     //ui
     Ui::MainWindow *ui;
