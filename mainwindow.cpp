@@ -387,24 +387,31 @@ void MainWindow::on_bPaste_clicked()
 
 void MainWindow::on_lineEdit_returnPressed()
 {
-    QString lookup = m_dicts[m_activeDict].dict[ui->lineEdit->text()];
-    if (lookup != ""){
-        QTreeWidgetItem *item = new QTreeWidgetItem;
-        item->setFlags(item->flags() | Qt::ItemIsEditable);
-        item->setText(0,ui->lineEdit->text());
-        item->setData(1, Qt::DisplayRole, 1);
-        ui->treeWidget->addTopLevelItem(item);
+    bool found=false;
+    ui->textBrowser->clear();
+    for (int i=0;i<m_dicts.length();++i){
+        QString lookup = m_dicts[i].dict[ui->lineEdit->text()];
+        if (lookup != ""){
+            QTreeWidgetItem *item = new QTreeWidgetItem;
+            item->setFlags(item->flags() | Qt::ItemIsEditable);
 
-        ui->textBrowser->setHtml(lookup);
-
+            ui->treeWidget->addTopLevelItem(item);
+            ui->textBrowser->insertHtml(lookup);
+            found = true;
+        }
     }
-    else{
+
+    if (!found){
         QMessageBox::StandardButton answer = QMessageBox::question(this, tr("Google it?"),"Word not found, google it?");
         if (answer == QMessageBox::Yes){
             QString link = QString("https://www.google.com/#q=")+ui->lineEdit->text();
             QUrl url(link);
             QDesktopServices::openUrl(url);
         }
+    }
+    else{
+        item->setText(0,ui->lineEdit->text());
+        item->setData(1, Qt::DisplayRole, 1);
     }
 }
 
