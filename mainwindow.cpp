@@ -20,20 +20,25 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle(tr("LR - Love Reading"));
     m_activeDict = 0;
-    m_memoryPath = QString("memory.txt");//default path
-    readMemoryFile(m_memoryPath);
-    ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
+    //ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
 
-    gdAskMessage = RegisterWindowMessage( L"GOLDENDICT_GET_WORD_IN_COORDINATES" );
+    gdAskMessage = RegisterWindowMessage( L"MESSAGE" );
 	( static_cast< QHotkeyApplication * >( qApp ) )->setMainWindow( this );
     installHotKeys();
-    /*
-    QString fileText = QString("mtBab_FV_Edition_1.0_beta.bgl");//QFileDialog::getOpenFileName(this, "Open", "E:/Documents", "Text File (*.*)");
-    if (fileText.isEmpty()) return;
-    ui->treeWidget->clear();
-
-    m_babylon = new Babylon(fileText.toUtf8().constData());
-    convert();*/
+    m_babylon = NULL;
+    QDirIterator it(QDir::currentPath(), QStringList() << "*.bgl", QDir::Files);
+    while (it.hasNext()){
+        if (m_babylon){
+            delete m_babylon;
+            m_babylon = NULL;
+        }
+        QString filename = it.next();
+        m_babylon = new Babylon(filename.toUtf8().constData());//update babylon filename
+        convert();//read babylon file
+        ui->comboBox->addItem(m_dicts.last().name);
+        qDebug()<<filename.left(filename.lastIndexOf(".")) + QString(".minh");
+        readMemoryFile(filename.left(filename.lastIndexOf(".")) + QString(".minh"));//read memory
+    }
 }
 
 /*
@@ -62,9 +67,12 @@ bool MainWindow::convert()
 
     Dictionary dict;
     dict.name = QString(m_babylon->title().c_str());
+    dict.filename = QString(m_babylon->filename().c_str());
 
     bgl_entry entry;
     entry = m_babylon->readEntry();
+
+    qDebug()<<m_babylon->sourceLang();
     QMap<QString,QString> wordsList;
     while( !entry.headword.empty() )
     {
@@ -96,7 +104,7 @@ void MainWindow::on_actionOpen_triggered()
         QMap<QString,int> map = file.read();
 
         for (QMap<QString,int>::iterator it=map.begin(); it!=map.end(); ++it){
-            if (m_memoryList.indexOf(it.key())>=0) continue;
+            if (m_memoryList[m_activeDict].indexOf(it.key())>=0) continue;
 
             QTreeWidgetItem *item = new QTreeWidgetItem;
             item->setFlags(item->flags() | Qt::ItemIsEditable);
@@ -138,7 +146,7 @@ void MainWindow::readFile(QString fileText){
             for (int i=0;i<fields.length();++i){
                 if (fields[i].length()<3) continue;
                 fields[i] = fields[i].toLower();
-                if (m_memoryList.indexOf(fields[i])>=0) continue;
+                if (m_memoryList[m_activeDict].indexOf(fields[i])>=0) continue;
                 if (dictionaryList.indexOf(fields[i])<0) continue;
                 QTreeWidgetItem* item;
                 item = new QTreeWidgetItem();
@@ -151,47 +159,49 @@ void MainWindow::readFile(QString fileText){
                     int index = ui->treeWidget->indexOfTopLevelItem(items[0]);
                     item->setData(1, Qt::DisplayRole,++f);
                     ui->treeWidget->takeTopLevelItem(index);
-
                 }
-
                 ui->treeWidget->addTopLevelItem(item);
-
             }
+            if (ui->treeWidget->topLevelItemCount()>=1000) break;
         }
-        //ui->treeWidget->sortItems(1,Qt::DescendingOrder);
-        ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+        if (ui->treeWidget->topLevelItemCount()<1000)
+            ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+        else
+            ui->label->setText("You have more than 1000 newwords");
     }
     file.close();
 }
 
 void MainWindow::on_bKnow_clicked()
 {
-    QFile file(m_memoryPath);
+    QString filename = m_dicts[m_activeDict].filename;
+    QFile file(filename.left(filename.lastIndexOf("."))+".minh");
     if (file.open(QIODevice::Append))
     {
         QTextStream out(&file);   // we will serialize the data into the file
         QList<QTreeWidgetItem *> items = ui->treeWidget->selectedItems();
         for (int i=0;i<items.length();++i){
             out << items[i]->text(0) << "\n";
-            m_memoryList.push_back(items[i]->text(0));
+            m_memoryList[m_activeDict].push_back(items[i]->text(0));
             int index = ui->treeWidget->indexOfTopLevelItem(items[i]);
             m_deletedItems.push_back(items[i]);
             m_deletedIndexes.push_back(index);
             m_previousCommands.push_back(I_KNOW);
             ui->treeWidget->takeTopLevelItem(index);
             ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
-            ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
+            ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
         }
     }
     file.close();
 }
 
+/*this function will not be used at the moment*/
 void MainWindow::on_bLoad_clicked()
 {
     m_memoryPath = QFileDialog::getOpenFileName(this, "Load Memory", "E:/Documents", "Reading file (*.txt *.srt *.lrt)");
     if (m_memoryPath.isEmpty()) return;//TODO: message box is shown
     readMemoryFile(m_memoryPath);
-    ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
+    ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
 }
 
 void MainWindow::readMemoryFile(QString fileText){
@@ -199,14 +209,34 @@ void MainWindow::readMemoryFile(QString fileText){
     if (file.open(QIODevice::ReadOnly))
     {
         QTextStream in(&file);
-        int count = 0;
+        QList<QString> list;
         while(!in.atEnd()) {
             QString line = in.readLine();
             QStringList  fields = line.split("\n");
             if (fields[0]!="")
-                m_memoryList.append(fields[0]);
+                list.append(fields[0]);
         }
-        ui->label->setText("You have "+QString::number(count)+" newwords");
+        m_memoryList.append(list);
+    }
+    file.close();
+}
+
+void MainWindow::readDictionary(QString fileText){
+    QFile file(fileText);
+    if (file.open(QIODevice::ReadOnly))
+    {
+        QTextStream in(&file);
+        Dictionary dict;
+        dict.name = in.readLine();
+        in.readLine();//read version
+
+        while(!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList  fields = line.split(" ");
+            dict.dict[fields[0]] = line.remove(fields[0]+" ");
+        }
+        m_dicts.append(dict);
+        ui->comboBox->addItem(m_dicts.last().name);
     }
     file.close();
 }
@@ -235,16 +265,18 @@ void MainWindow::undoCommand(CommandState com){
     QTreeWidgetItem *item = m_deletedItems.last();
     if (com==I_KNOW){
         ui->treeWidget->insertTopLevelItem(index, item);
-        m_memoryList.removeLast();
+        m_memoryList[m_activeDict].removeLast();
         ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
-        ui->label_2->setText("You've remembered "+QString::number(m_memoryList.length())+" words, bravo !!!");
+        ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
 
-        QFile file(m_memoryPath);
+        QString filename = m_dicts[m_activeDict].filename;
+
+        QFile file(filename.left(filename.lastIndexOf("."))+".minh");
         if (file.open(QIODevice::WriteOnly))
         {
             QTextStream out(&file);   // we will serialize the data into the file
-            for (int i=0;i<m_memoryList.length();++i){
-                out << m_memoryList[i] << "\n";
+            for (int i=0;i<m_memoryList[m_activeDict].length();++i){
+                out << m_memoryList[m_activeDict][i] << "\n";
             }
         }
         file.close();
@@ -304,7 +336,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         case Qt::Key_Space: on_bKnow_clicked(); break;
     }
 }
-
+/*this function used for testing purpose*/
 void MainWindow::on_bRemoveInFile_clicked()
 {
     removeWordFromFile("enghien", m_memoryPath);
@@ -312,7 +344,8 @@ void MainWindow::on_bRemoveInFile_clicked()
 
 void MainWindow::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column)
 {
-    ui->textBrowser->setHtml(m_dicts[m_activeDict].dict[item->text(0)]);
+    if (column == 0)
+        ui->textBrowser->setHtml(m_dicts[m_activeDict].dict[item->text(0)]);
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -363,7 +396,7 @@ void MainWindow::on_bPaste_clicked()
     for (int i=0;i<fields.length();++i){
         if (fields[i].length()<3) continue;
         fields[i] = fields[i].toLower();
-        if (m_memoryList.indexOf(fields[i])>=0) continue;
+        if (m_memoryList[m_activeDict].indexOf(fields[i])>=0) continue;
         if (dictionaryList.indexOf(fields[i])<0) continue;
         QTreeWidgetItem* item;
         item = new QTreeWidgetItem();
@@ -392,10 +425,9 @@ void MainWindow::on_lineEdit_returnPressed()
     for (int i=0;i<m_dicts.length();++i){
         QString lookup = m_dicts[i].dict[ui->lineEdit->text()];
         if (lookup != ""){
-            QTreeWidgetItem *item = new QTreeWidgetItem;
-            item->setFlags(item->flags() | Qt::ItemIsEditable);
 
-            ui->treeWidget->addTopLevelItem(item);
+
+
             ui->textBrowser->insertHtml(lookup);
             found = true;
         }
@@ -410,8 +442,11 @@ void MainWindow::on_lineEdit_returnPressed()
         }
     }
     else{
+        QTreeWidgetItem *item = new QTreeWidgetItem;
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0,ui->lineEdit->text());
         item->setData(1, Qt::DisplayRole, 1);
+        ui->treeWidget->addTopLevelItem(item);
     }
 }
 
@@ -501,4 +536,7 @@ bool MainWindow::isGoldenDictWindow( HWND hwnd )
 void MainWindow::on_comboBox_currentIndexChanged(int index)
 {
     m_activeDict = index;
+    //todo: function update
+    if (index<m_memoryList.length())
+        ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));//update word number
 }

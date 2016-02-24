@@ -11,6 +11,7 @@
 
 struct Dictionary {
     QString                 name;
+    QString                 filename;
     QMap<QString,QString>   dict;
 };
 
@@ -90,12 +91,12 @@ private:
     void removeWordFromFile(QString word, QString fileText);
     bool convert();
     void installHotKeys();
-
+    void readDictionary(QString fileText);
 
     //attributes
     int m_count;
     QString m_memoryPath;
-    QList<QString> m_memoryList;
+    QList< QList<QString> > m_memoryList;
     QList<QTreeWidgetItem *> m_deletedItems;
     QList<int> m_deletedIndexes;//to remember the position of item in the list
     QList<CommandState> m_previousCommands;
@@ -108,6 +109,7 @@ private:
 
     //ui
     Ui::MainWindow *ui;
+
 };
 
 #endif // MAINWINDOW_H
