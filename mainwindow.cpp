@@ -20,7 +20,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle(tr("LR - Love Reading"));
     m_activeDict = 0;
-    //ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
 
     gdAskMessage = RegisterWindowMessage( L"MESSAGE" );
 	( static_cast< QHotkeyApplication * >( qApp ) )->setMainWindow( this );
@@ -33,11 +32,11 @@ MainWindow::MainWindow(QWidget *parent) :
             m_babylon = NULL;
         }
         QString filename = it.next();
+        readMemoryFile(filename.left(filename.lastIndexOf(".")) + QString(".minh"));//read memory
         m_babylon = new Babylon(filename.toUtf8().constData());//update babylon filename
         convert();//read babylon file
         ui->comboBox->addItem(m_dicts.last().name);
         qDebug()<<filename.left(filename.lastIndexOf(".")) + QString(".minh");
-        readMemoryFile(filename.left(filename.lastIndexOf(".")) + QString(".minh"));//read memory
     }
 }
 
@@ -116,7 +115,7 @@ void MainWindow::on_actionOpen_triggered()
             item->setData(1, Qt::DisplayRole, it.value());
             ui->treeWidget->addTopLevelItem(item);
         }
-        ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+        updateNumbers();
     }
     else readFile(fileText);
 }
@@ -166,12 +165,9 @@ void MainWindow::readFile(QString fileText){
                 }
                 ui->treeWidget->addTopLevelItem(item);
             }
-            if (ui->treeWidget->topLevelItemCount()>=1000) break;
+            if (ui->treeWidget->topLevelItemCount()>=100) break;
         }
-        if (ui->treeWidget->topLevelItemCount()<1000)
-            ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
-        else
-            ui->label->setText("You have more than 1000 newwords");
+        updateNumbers();
     }
     file.close();
 }
@@ -185,6 +181,7 @@ void MainWindow::on_bKnow_clicked()
         QTextStream out(&file);   // we will serialize the data into the file
         QList<QTreeWidgetItem *> items = ui->treeWidget->selectedItems();
         for (int i=0;i<items.length();++i){
+            if (items[i]->isDisabled()) continue;
             out << items[i]->text(0) << "\n";
             m_memoryList[m_activeDict].push_back(items[i]->text(0));
             int index = ui->treeWidget->indexOfTopLevelItem(items[i]);
@@ -192,8 +189,7 @@ void MainWindow::on_bKnow_clicked()
             m_deletedIndexes.push_back(index);
             m_previousCommands.push_back(I_KNOW);
             ui->treeWidget->takeTopLevelItem(index);
-            ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
-            ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
+            updateNumbers();
         }
     }
     file.close();
@@ -205,7 +201,7 @@ void MainWindow::on_bLoad_clicked()
     m_memoryPath = QFileDialog::getOpenFileName(this, "Load Memory", "E:/Documents", "Reading file (*.txt *.srt *.lrt)");
     if (m_memoryPath.isEmpty()) return;//TODO: message box is shown
     readMemoryFile(m_memoryPath);
-    ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
+    updateNumbers();
 }
 
 void MainWindow::readMemoryFile(QString fileText){
@@ -270,8 +266,7 @@ void MainWindow::undoCommand(CommandState com){
     if (com==I_KNOW){
         ui->treeWidget->insertTopLevelItem(index, item);
         m_memoryList[m_activeDict].removeLast();
-        ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
-        ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));
+        updateNumbers();
 
         QString filename = m_dicts[m_activeDict].filename;
 
@@ -287,7 +282,7 @@ void MainWindow::undoCommand(CommandState com){
     }
     else if (com==REMOVE){
         ui->treeWidget->insertTopLevelItem(index, item);
-        ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+        updateNumbers();
     }
 }
 
@@ -300,7 +295,7 @@ void MainWindow::on_bRemove_clicked()
         m_deletedIndexes.push_back(index);
         m_previousCommands.push_back(REMOVE);
         ui->treeWidget->takeTopLevelItem(index);
-        ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+        updateNumbers();
     }
 }
 /*not use at the moment*/
@@ -337,7 +332,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         case Qt::Key_T: on_bTranslate_clicked(); break;
         case Qt::Key_Z: on_bUndo_clicked(); break;
         case Qt::Key_Delete: on_bRemove_clicked(); break;
-        case Qt::Key_Space: on_bKnow_clicked(); break;
+        case Qt::Key_X: on_bKnow_clicked(); break;
     }
 }
 /*this function used for testing purpose*/
@@ -348,8 +343,10 @@ void MainWindow::on_bRemoveInFile_clicked()
 
 void MainWindow::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column)
 {
-    if (column == 0)
+    if (column == 0){
         ui->textBrowser->setHtml(m_dicts[m_activeDict].dict[item->text(0)]);
+        item->setDisabled(true);
+    }
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -373,7 +370,7 @@ void MainWindow::on_treeWidget_itemChanged(QTreeWidgetItem *item, int column)
             it->setData(1, Qt::DisplayRole, item->data(1,Qt::DisplayRole));
             ui->treeWidget->insertTopLevelItem(index, it);
         }
-        ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+        updateNumbers();
     }
 }
 
@@ -419,7 +416,7 @@ void MainWindow::on_bPaste_clicked()
         ui->treeWidget->addTopLevelItem(item);
 
     }
-    ui->label->setText("You have "+QString::number(ui->treeWidget->topLevelItemCount())+" newwords");
+    updateNumbers();
 }
 
 void MainWindow::on_lineEdit_returnPressed()
@@ -541,6 +538,12 @@ void MainWindow::on_comboBox_currentIndexChanged(int index)
 {
     m_activeDict = index;
     //todo: function update
-    if (index<m_memoryList.length())
-        ui->label_2->setText(QString::number(m_memoryList[m_activeDict].length()));//update word number
+    updateNumbers();
+}
+
+void MainWindow::updateNumbers(){
+    if (m_activeDict<m_memoryList.length())
+        ui->label_2->setText(QString::number(ui->treeWidget->topLevelItemCount()) +
+                             "/" +
+                             QString::number(m_memoryList[m_activeDict].length()));//update word number
 }

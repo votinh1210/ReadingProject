@@ -20,7 +20,7 @@
    <property name="autoFillBackground">
     <bool>false</bool>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <layout class="QHBoxLayout" name="horizontalLayout_3">
     <item>
      <layout class="QGridLayout" name="gridLayout" rowminimumheight="0,0,0,1">
       <item row="0" column="1">
@@ -32,13 +32,6 @@
       </item>
       <item row="1" column="1">
        <widget class="QLineEdit" name="lineEdit"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="bKnow">
-        <property name="text">
-         <string>I know this word (Space)</string>
-        </property>
-       </widget>
       </item>
       <item row="2" column="1">
        <widget class="QPushButton" name="bUndo">
@@ -94,13 +87,28 @@
         </item>
        </layout>
       </item>
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QPushButton" name="bPaste">
+          <property name="text">
+           <string>Paste from Clipboard</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="bKnow">
+          <property name="text">
+           <string>I know this word (Ctrl+X)</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="commandLayout">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetMaximumSize</enum>
-      </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QPushButton" name="bRemove">
         <property name="text">
@@ -119,13 +127,6 @@
        <widget class="QPushButton" name="bGoogle">
         <property name="text">
          <string>Google (Ctrl+G)</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="bPaste">
-        <property name="text">
-         <string>Paste from Clipboard</string>
         </property>
        </widget>
       </item>
@@ -150,32 +151,9 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>1</horstretch>
-          <verstretch>1</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>178</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Please open a reading file to begin</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::RichText</enum>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
    </layout>
-   <zorder>labelLanguage</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

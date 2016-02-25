@@ -92,6 +92,7 @@ private:
     bool convert();
     void installHotKeys();
     void readDictionary(QString fileText);
+    void updateNumbers();
 
     //attributes
     int m_count;
@@ -109,6 +110,7 @@ private:
 
     //ui
     Ui::MainWindow *ui;
+
 
 };
 
