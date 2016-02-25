@@ -46,6 +46,10 @@ MainWindow::MainWindow(QWidget *parent) :
 */
 MainWindow::~MainWindow()
 {
+    if (m_babylon){
+        delete m_babylon;
+        m_babylon = NULL;
+    }
     delete ui;
 }
 
