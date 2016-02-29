@@ -8,6 +8,7 @@
 #include <QClipboard>
 //#include <QxtGlobalShortcut>
 #include "languagereadingfile.h"
+#include <QInputDialog>
 
 
 /*
@@ -15,6 +16,7 @@
 */
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
+    m_fileReading(""),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -38,6 +40,39 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->comboBox->addItem(m_dicts.last().name);
         qDebug()<<filename.left(filename.lastIndexOf(".")) + QString(".minh");
     }
+    createToolBar();
+    updateNumbers();
+    //feature
+    //connect( ui->article, SIGNAL(doubleClicked()),this,SLOT(textSelecteddoubleClicked()) );
+}
+
+void MainWindow::createToolBar(){
+
+    ui->toolBar->setIconSize(QSize(50, 50));
+    QIcon saveIcon( ":/resources/save.png" );
+    ui->toolBar->addAction( saveIcon, QT_TR_NOOP( "Save LR File" ), this, SLOT( on_actionSave_triggered() ) );
+
+    QIcon pasteIcon( ":/resources/paste.png" );
+    ui->toolBar->addAction( pasteIcon, QT_TR_NOOP( "Read text from clipboard" ), this, SLOT( on_bPaste_clicked() ) );
+
+    QIcon addIcon( ":/resources/add.png" );
+    ui->toolBar->addAction( addIcon, QT_TR_NOOP( "Click if you already know this word" ), this, SLOT( on_bKnow_clicked() ) );
+
+    QIcon removeIcon( ":/resources/remove.png" );
+    ui->toolBar->addAction( removeIcon, QT_TR_NOOP( "Remove word from memory" ), this, SLOT( on_removeIcon_click() ) );
+
+    QIcon undoIcon( ":/resources/undo.png" );
+    ui->toolBar->addAction( undoIcon, QT_TR_NOOP( "Undo" ), this, SLOT( on_bUndo_clicked() ) );
+
+    QIcon refreshIcon( ":/resources/refresh.png" );
+    ui->toolBar->addAction( refreshIcon, QT_TR_NOOP( "Read again the book" ), this, SLOT( on_bRefresh_clicked() ) );
+
+    //QIcon knowIcon( ":/resources/know.png" );
+    //ui->toolBar->addAction( knowIcon, QT_TR_NOOP( "Read again the book" ), this, SLOT( on_bRefresh_clicked() ) );
+
+    QIcon deleteIcon( ":/resources/trashcan.png" );
+    ui->toolBar->addAction( deleteIcon, QT_TR_NOOP( "Remove word from list" ), this, SLOT( on_bRemove_clicked() ) );
+
 }
 
 /*
@@ -50,6 +85,18 @@ MainWindow::~MainWindow()
         m_babylon = NULL;
     }
     delete ui;
+}
+
+void MainWindow::on_removeIcon_click(){
+    bool dialogResult;
+    QString result = QInputDialog::getText(0, "Remove word", "Enter the word to be remove:", QLineEdit::Normal,
+                                           "", &dialogResult);
+    //if (!dialogResult) return;
+    if (result!=""){
+        QString filename = m_dicts[m_activeDict].filename;
+        filename = filename.left(filename.lastIndexOf("."))+".minh";
+        removeWordFromFile(result, filename);
+    }
 }
 
 
@@ -101,23 +148,28 @@ void MainWindow::on_actionOpen_triggered()
 {
     QString fileText = QFileDialog::getOpenFileName(this, "Open E-book", "E:/Documents", "Text File (*.txt *.srt *.lrt)");
     if (fileText.isEmpty()) return;
+    m_fileReading = fileText;
     ui->treeWidget->clear();
-    if (fileText.split(".").last()=="lrt"){//get extension
-        LanguageReadingFile file(fileText);
-        QMap<QString,int> map = file.read();
+    if (fileText.split(".").last()=="lrt")//get extension
+        readFileLRT(fileText);
+    else
+        readFile(fileText);
+}
 
-        for (QMap<QString,int>::iterator it=map.begin(); it!=map.end(); ++it){
-            if (m_memoryList[m_activeDict].indexOf(it.key())>=0) continue;
+void MainWindow::readFileLRT(QString fileText){
+    LanguageReadingFile file(fileText);
+    QMap<QString,int> map = file.read();
 
-            QTreeWidgetItem *item = new QTreeWidgetItem;
-            item->setFlags(item->flags() | Qt::ItemIsEditable);
-            item->setText(0,it.key());
-            item->setData(1, Qt::DisplayRole, it.value());
-            ui->treeWidget->addTopLevelItem(item);
-        }
-        updateNumbers();
+    for (QMap<QString,int>::iterator it=map.begin(); it!=map.end(); ++it){
+        if (m_memoryList[m_activeDict].indexOf(it.key())>=0) continue;
+
+        QTreeWidgetItem *item = new QTreeWidgetItem;
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        item->setText(0,it.key());
+        item->setData(1, Qt::DisplayRole, it.value());
+        ui->treeWidget->addTopLevelItem(item);
     }
-    else readFile(fileText);
+    updateNumbers();
 }
 
 void MainWindow::on_actionExit_triggered()
@@ -165,7 +217,8 @@ void MainWindow::readFile(QString fileText){
                 }
                 ui->treeWidget->addTopLevelItem(item);
             }
-            if (ui->treeWidget->topLevelItemCount()>=100) break;
+            int numMax = ui->lineEdit->text().toInt();
+            if (ui->treeWidget->topLevelItemCount()>=numMax) break;
         }
         updateNumbers();
     }
@@ -265,20 +318,12 @@ void MainWindow::undoCommand(CommandState com){
     QTreeWidgetItem *item = m_deletedItems.last();
     if (com==I_KNOW){
         ui->treeWidget->insertTopLevelItem(index, item);
-        m_memoryList[m_activeDict].removeLast();
-        updateNumbers();
 
         QString filename = m_dicts[m_activeDict].filename;
+        filename = filename.left(filename.lastIndexOf("."))+".minh";
+        removeWordFromFile(item->text(0), filename);
+        updateNumbers();
 
-        QFile file(filename.left(filename.lastIndexOf("."))+".minh");
-        if (file.open(QIODevice::WriteOnly))
-        {
-            QTextStream out(&file);   // we will serialize the data into the file
-            for (int i=0;i<m_memoryList[m_activeDict].length();++i){
-                out << m_memoryList[m_activeDict][i] << "\n";
-            }
-        }
-        file.close();
     }
     else if (com==REMOVE){
         ui->treeWidget->insertTopLevelItem(index, item);
@@ -298,22 +343,24 @@ void MainWindow::on_bRemove_clicked()
         updateNumbers();
     }
 }
-/*not use at the moment*/
+
+
 void MainWindow::removeWordFromFile(QString word, QString fileText){
+
+    if (!m_memoryList[m_activeDict].removeOne(word)){
+        QMessageBox::information(this,"Word not found", "There is no such word in your memory");
+        return;
+    }
     QFile file(fileText);
-    if (file.open(QIODevice::ReadWrite | QIODevice::Text))
+    if (file.open(QIODevice::WriteOnly))
     {
-        QString s;
-        QTextStream in(&file);
-        while(!in.atEnd()) {
-            QString line = in.readLine();
-            if (line!=word)
-                s.append(line+"\n");
+        QTextStream out(&file);   // we will serialize the data into the file
+        for (int i=0;i<m_memoryList[m_activeDict].length();++i){
+            out << m_memoryList[m_activeDict][i] << "\n";
         }
-        file.resize(0);
-        in<<s;
     }
     file.close();
+
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -335,16 +382,21 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         case Qt::Key_X: on_bKnow_clicked(); break;
     }
 }
-/*this function used for testing purpose*/
-void MainWindow::on_bRemoveInFile_clicked()
+
+
+void MainWindow::on_bRefresh_clicked()
 {
-    removeWordFromFile("enghien", m_memoryPath);
+    ui->treeWidget->clear();
+    if (m_fileReading.split(".").last()=="lrt")//get extension
+        readFileLRT(m_fileReading);
+    else
+        readFile(m_fileReading);
 }
 
 void MainWindow::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column)
 {
     if (column == 0){
-        ui->textBrowser->setHtml(m_dicts[m_activeDict].dict[item->text(0)]);
+        ui->article->setHtml(m_dicts[m_activeDict].dict[item->text(0)]);
         item->setDisabled(true);
     }
 }
@@ -384,9 +436,15 @@ void MainWindow::on_bGoogle_clicked()
 
 void MainWindow::on_bPaste_clicked()
 {
+    if (ui->treeWidget->topLevelItemCount()>0){
+        if (QMessageBox::question(this,"Clear words list?", "Do you really want to paste from clipboard? This will clear all the words are already in list.")==QMessageBox::Yes){
+            ui->treeWidget->clear();
+        }
+        else
+            return;
+    }
     QClipboard *clipboard = QApplication::clipboard();
     QString text = clipboard->text();
-    ui->treeWidget->clear();
     text.replace("\'"," ");
     text.replace("\’"," ");
     text.replace("\n"," ");
@@ -422,16 +480,12 @@ void MainWindow::on_bPaste_clicked()
 void MainWindow::on_lineEdit_returnPressed()
 {
     bool found=false;
-    ui->textBrowser->clear();
-    for (int i=0;i<m_dicts.length();++i){
-        QString lookup = m_dicts[i].dict[ui->lineEdit->text()];
-        if (lookup != ""){
+    ui->article->setHtml("");
 
-
-
-            ui->textBrowser->insertHtml(lookup);
-            found = true;
-        }
+    QString lookup = m_dicts[m_activeDict].dict[ui->lineEdit->text()];
+    if (lookup != ""){
+        ui->article->setHtml(lookup);
+        found = true;
     }
 
     if (!found){
@@ -536,9 +590,20 @@ bool MainWindow::isGoldenDictWindow( HWND hwnd )
 
 void MainWindow::on_comboBox_currentIndexChanged(int index)
 {
-    m_activeDict = index;
-    //todo: function update
-    updateNumbers();
+    if (index!=m_activeDict){//check index changed from m_activeDict
+        if (ui->treeWidget->topLevelItemCount()>0){//check if there are words in list (will be remove?)
+            if (QMessageBox::question(this,"Clear words list?", "Do you really want to change dictionary? This will clear all words in list.")==QMessageBox::Yes){
+                ui->treeWidget->clear();
+
+            }
+            else{
+                ui->comboBox->setCurrentIndex(m_activeDict);
+                return;
+            }
+        }
+        m_activeDict = index;
+        updateNumbers();
+    }
 }
 
 void MainWindow::updateNumbers(){
@@ -546,4 +611,13 @@ void MainWindow::updateNumbers(){
         ui->label_2->setText(QString::number(ui->treeWidget->topLevelItemCount()) +
                              "/" +
                              QString::number(m_memoryList[m_activeDict].length()));//update word number
+}
+
+void MainWindow::textSelecteddoubleClicked(){
+    QString text = ui->article->selectedText();
+    QString lookup = m_dicts[m_activeDict].dict[text];
+    if (lookup != ""){
+        ui->article->setHtml(lookup);
+    }
+    else ui->article->setHtml("not found");
 }

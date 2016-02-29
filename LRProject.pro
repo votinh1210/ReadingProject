@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network xml
+QT       += core gui network xml webkitwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -34,7 +34,8 @@ SOURCES += main.cpp\
     goldendictLib/qtsingleapplication.cpp \
     goldendictLib/qtlocalpeer.cpp \
     goldendictLib/qtlockedfile.cpp \
-    goldendictLib/qtlockedfile_win.cpp
+    goldendictLib/qtlockedfile_win.cpp \
+    articleview.cpp
 
 HEADERS  += mainwindow.h \
     languagereadingfile.h \
@@ -62,10 +63,15 @@ HEADERS  += mainwindow.h \
     goldendictLib/qtsingleapplication.h \
     goldendictLib/qtlocalpeer.h \
     goldendictLib/qtlockedfile.h \
-    dictionary.h
+    dictionary.h \
+    articleview.h
 
 FORMS   += mainwindow.ui
 
-ICON = LRProject.ico
+ICON = icon.png
+#RC_FILE = LRProject.rc
+
+RESOURCES += \
+    lrproject.qrc
 
 win32:LIBS += -liconv

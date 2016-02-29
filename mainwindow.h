@@ -8,6 +8,7 @@
 #include "goldendictLib/sptr.hh"
 #include "goldendictLib/hotkeywrapper.hh"
 //#include "dictionary.h"
+#include "articleview.h"
 
 struct Dictionary {
     QString                 name;
@@ -49,7 +50,7 @@ private slots:
 
     void on_bRemove_clicked();
 
-    void on_bRemoveInFile_clicked();
+    void on_bRefresh_clicked();
 
     void on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column);
 
@@ -65,16 +66,18 @@ private slots:
 
     void on_actionAdd_a_dictionary_triggered();
 	
-  /// For receiving message from scan libraries
+    /// For receiving message from scan libraries
 protected:
 	unsigned gdAskMessage;
 public:
 	bool handleGDMessage( MSG * message, long * result );
 private slots:
-  /// Return true while scanning GoldenDict window
-  bool isGoldenDictWindow( HWND hwnd );
+    /// Return true while scanning GoldenDict window
+    bool isGoldenDictWindow( HWND hwnd );
 
-  void on_comboBox_currentIndexChanged(int index);
+    void on_comboBox_currentIndexChanged(int index);
+    void textSelecteddoubleClicked();
+    void on_removeIcon_click();
 
 private:
 
@@ -93,6 +96,13 @@ private:
     void installHotKeys();
     void readDictionary(QString fileText);
     void updateNumbers();
+    void readFileLRT(QString fileText);
+
+
+
+
+    void createToolBar();//create buttons
+
 
     //attributes
     int m_count;
@@ -106,11 +116,11 @@ private:
     QList<Dictionary> m_dicts;
     sptr< HotkeyWrapper > hotkeyWrapper;
     int m_activeDict;
+    QString m_fileReading;
 
 
     //ui
     Ui::MainWindow *ui;
-
 
 };
 

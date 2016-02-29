@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/know.png</file>
+        <file>resources/paste.png</file>
+        <file>resources/refresh.png</file>
+        <file>resources/undo.png</file>
+        <file>resources/add.png</file>
+        <file>resources/remove.png</file>
+        <file>resources/save.png</file>
+        <file>resources/trashcan.png</file>
+    </qresource>
+</RCC>

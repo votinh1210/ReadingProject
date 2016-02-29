@@ -10,6 +10,6 @@ int main(int argc, char *argv[])
 
     //a.addDataCommiter( w );
     w.show();
-    a.setWindowIcon(QIcon("LRProject.ico"));
+    a.setWindowIcon(QIcon("icon.png"));
     return a.exec();
 }
