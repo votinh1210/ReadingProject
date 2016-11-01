@@ -10,6 +10,60 @@
 #include "languagereadingfile.h"
 #include <QInputDialog>
 
+#include <math.h>
+#include "lrprinter.h"
+
+QString clean(QString str)
+{
+    str.remove("0");
+    str.remove("1");
+    str.remove("2");
+    str.remove("3");
+    str.remove("4");
+    str.remove("5");
+    str.remove("6");
+    str.remove("7");
+    str.remove("8");
+    str.remove("9");
+    str.remove("\"");
+    str.remove("\\");
+    str.remove(".");
+    str.remove(",");
+    str.remove("?");
+    str.remove("!");
+    str.remove("'");
+    str.remove("`");
+    str.remove("-");
+    str.remove("_");
+    str.remove("—");
+    str.remove("@");
+    str.remove("#");
+    str.remove("$");
+    str.remove("%");
+    str.remove("^");
+    str.remove("&");
+    str.remove("*");
+    str.remove("(");
+    str.remove(")");
+    str.remove("{");
+    str.remove("}");
+    str.remove("[");
+    str.remove("]");
+    str.remove("|");
+    str.remove(";");
+    str.remove(":");
+    str.remove("/");
+    str.remove(">");
+    str.remove("<");
+    str.remove("~");
+    str.remove("=");
+    str.remove("+");
+    str.remove(str.fromUtf8("«"));
+    str.remove(str.fromUtf8("»"));
+    str.remove("…");
+    str = str.trimmed();
+    return str;
+}
 
 /*
  * Constructor
@@ -23,11 +77,12 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowTitle(tr("LR - Love Reading"));
     m_activeDict = 0;
 
-    gdAskMessage = RegisterWindowMessage( L"MESSAGE" );
-	( static_cast< QHotkeyApplication * >( qApp ) )->setMainWindow( this );
-    installHotKeys();
+    //gdAskMessage = RegisterWindowMessage( L"MESSAGE" );
+    //( static_cast< QHotkeyApplication * >( qApp ) )->setMainWindow( this );
+    //installHotKeys();
+
     m_babylon = NULL;
-    QDirIterator it(QDir::currentPath(), QStringList() << "*.bgl", QDir::Files);
+    QDirIterator it("E:/Documents/LRProject", QStringList() << "*.bgl", QDir::Files);
     while (it.hasNext()){
         if (m_babylon){
             delete m_babylon;
@@ -196,11 +251,17 @@ void MainWindow::readFile(QString fileText){
         while(!in.atEnd()) {
             QString line = in.readLine();
             line.replace("\'"," ");
-            line.remove(QRegExp(QString::fromUtf8("[0123456789`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\\[\\\]\\\\]")));
+            line.replace("’"," ");
+            line.replace("\n"," ");
+            line = clean(line);
+            //line.remove(QRegExp(QString::fromUtf8("[-0123456789`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\[]]")));
             QStringList  fields = line.split(" ");
             for (int i=0;i<fields.length();++i){
                 if (fields[i].length()<3) continue;
                 fields[i] = fields[i].toLower();
+                //if (fields[i]=="shed"){
+                //    qDebug()<<line;
+                //}
                 if (m_memoryList[m_activeDict].indexOf(fields[i])>=0) continue;
                 if (dictionaryList.indexOf(fields[i])<0) continue;
                 QTreeWidgetItem* item;
@@ -225,6 +286,15 @@ void MainWindow::readFile(QString fileText){
     file.close();
 }
 
+/*
+ * export
+*/
+void MainWindow::exportFileWithoutKnownWord(QString fileOri, QString fileText){
+    SubtitleSrtFile srtFile(fileOri);
+    srtFile.modifySub(0.25f, 20, &m_memoryList[m_activeDict]);
+    srtFile.write(fileText);
+    return;
+}
 void MainWindow::on_bKnow_clicked()
 {
     QString filename = m_dicts[m_activeDict].filename;
@@ -365,21 +435,20 @@ void MainWindow::removeWordFromFile(QString word, QString fileText){
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    switch(event->key()){
-        case Qt::Key_Escape: {
-            QList<QTreeWidgetItem *> items = ui->treeWidget->selectedItems();
-            for (int i=0;i<items.length();++i){
-                if (items[i]->text(0).contains(" ")){
-                    QStringList sl = items[i]->text(0).split(" ");
-                    //todo: split to 2 line
-                }
-            }
+    if (event->modifiers() & Qt::ControlModifier){
+        switch(event->key()){
+            case Qt::Key_T: on_bTranslate_clicked(); break;
+            case Qt::Key_Z: on_bUndo_clicked(); break;
+            case Qt::Key_Delete: on_bRemove_clicked(); break;
+            case Qt::Key_X: on_bKnow_clicked(); break;
+        case Qt::Key_P:
+            on_actionPrint_triggered();
             break;
+        case Qt::Key_O:
+            on_actionOpen_triggered();
+            break;
+        default:    break;
         }
-        case Qt::Key_T: on_bTranslate_clicked(); break;
-        case Qt::Key_Z: on_bUndo_clicked(); break;
-        case Qt::Key_Delete: on_bRemove_clicked(); break;
-        case Qt::Key_X: on_bKnow_clicked(); break;
     }
 }
 
@@ -446,10 +515,11 @@ void MainWindow::on_bPaste_clicked()
     QClipboard *clipboard = QApplication::clipboard();
     QString text = clipboard->text();
     text.replace("\'"," ");
-    text.replace("\’"," ");
+    text.replace("’"," ");
     text.replace("\n"," ");
-    text.remove("…");
-    text.remove(QRegExp(QString::fromUtf8("[0123456789`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\\[\\\]\\\\]")));
+    text = clean(text);
+    //text.remove("…");
+    //text.remove(QRegExp(QString::fromUtf8("[0123456789`~!@#$%^&*()_—+=|:;<>«»,.?/{}\'\"\\[]]")));
     QStringList  fields = text.split(" ");
     QList<QString> dictionaryList = m_dicts[m_activeDict].dict.keys();
     for (int i=0;i<fields.length();++i){
@@ -530,12 +600,6 @@ void MainWindow::installHotKeys()
 
         return;
     }
-
-    hotkeyWrapper->setGlobalKey( Qt::Key_C,
-                                 Qt::Key_C,
-                                 Qt::ControlModifier,
-                                 0 );
-
     hotkeyWrapper->setGlobalKey( Qt::Key_C,
                                  Qt::Key_C,
                                  Qt::ControlModifier,
@@ -549,13 +613,12 @@ void MainWindow::installHotKeys()
 
 void MainWindow::hotKeyActivated( int hk )
 {
+    Q_UNUSED(hk)
     //QString text = QApplication::clipboard()->text();
     this->showNormal();
     this->raise();
     this->activateWindow();
-	on_bPaste_clicked();
-    //QMessageBox::question(this, tr("Google it?"),"Word not found, google it? ");
-
+    on_bPaste_clicked();
 }
 
 bool MainWindow::handleGDMessage( MSG * message, long * result )
@@ -566,19 +629,7 @@ bool MainWindow::handleGDMessage( MSG * message, long * result )
 
   if( !isGoldenDictWindow( message->hwnd ) )
     return true;
-	/*
-  ArticleView * view = getCurrentArticleView();
-  if( !view )
-    return true;
 
-  LPGDDataStruct lpdata = ( LPGDDataStruct ) message->lParam;
-
-  QString str = view->wordAtPoint( lpdata->Pt.x, lpdata->Pt.y );
-
-  memset( lpdata->cwData, 0, lpdata->dwMaxLength * sizeof( WCHAR ) );
-  str.truncate( lpdata->dwMaxLength - 1 );
-  str.toWCharArray( lpdata->cwData );
-*/
   *result = 1;
   return true;
 }
@@ -620,4 +671,94 @@ void MainWindow::textSelecteddoubleClicked(){
         ui->article->setHtml(lookup);
     }
     else ui->article->setHtml("not found");
+}
+
+void MainWindow::on_actionExport_triggered()
+{
+    QString fileText = QFileDialog::getSaveFileName(this, "Export ...", "E:/Documents", "All File (*.*)");
+    if (fileText.isEmpty()) return;
+    exportFileWithoutKnownWord(m_fileReading, fileText);
+}
+
+void MainWindow::on_actionCheck_Memory_triggered()
+{
+    QString filename = m_dicts[m_activeDict].filename;
+    filename = filename.left(filename.lastIndexOf("."))+".minh";
+    QList<QString> dictionaryList = m_dicts[m_activeDict].dict.keys();
+    for (int i=0; i<m_memoryList[m_activeDict].length(); ++i){
+        if (dictionaryList.indexOf(m_memoryList[m_activeDict][i])<0){
+            m_memoryList[m_activeDict].removeAt(i);
+            removeWordFromFile(m_memoryList[m_activeDict][i], filename);
+        }
+    }
+    updateNumbers();
+}
+
+void MainWindow::on_actionPrint_triggered()
+{
+    LrPrinter *printer = new LrPrinter(ui->treeWidget, &m_dicts[m_activeDict].dict);
+
+    QThread* thread = new QThread;
+    printer->moveToThread(thread);
+    //connect(printer, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(thread, SIGNAL(started()), printer, SLOT(process()));
+    connect(printer, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(printer, SIGNAL(finished()), printer, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    thread->start();
+
+    /*
+    QPrinter printer(QPrinter::PrinterResolution);
+    //show dialog printer
+    QPrintDialog dlg( &printer );
+    if( dlg.exec() == QDialog::Accepted )
+    {
+        //definition dimensions
+        int itemCount=ui->treeWidget->topLevelItemCount();
+        int cellX = printer.pageRect().width();
+        int cellY = printer.pageRect().height();
+        int width = 900;
+        int height = 900*cellY/cellX;
+        double xscale = cellX/double(width);
+        double yscale = cellY/double(height);
+        double scale = qMin(xscale, yscale);
+
+        //start painter
+        QPainter painter;
+        painter.begin(&printer);
+        painter.translate(printer.paperRect().x(), printer.paperRect().y());
+        painter.scale(scale, scale);
+        int nbPages = ceil(itemCount/10.f);
+        for (int k=0; k<nbPages;++k){
+            QWidget window;
+            QGridLayout layout;
+            window.setFixedSize(width, height);
+            //print one page
+            for (int i=0; i<10; ++i){
+                int order = k*10+i;
+                QWebView *myWidget = new QWebView;
+                if (order < itemCount){
+                    QString lookup = m_dicts[m_activeDict].dict[ui->treeWidget->topLevelItem(order)->text(0)];
+                    myWidget->setHtml(lookup);
+                }
+                layout.addWidget(myWidget,i/2,i%2);
+            }
+            window.setLayout(&layout);
+            window.render(&painter);
+
+            if (k<nbPages-1)//if it's not the last page
+                if (! printer.newPage()) {
+                    qWarning("failed in flushing page to disk, disk full?");
+                }
+        }
+        painter.end();
+    }*/
+}
+
+void MainWindow::on_checkBox_clicked(bool checked)
+{
+    if (!checked)
+        hotkeyWrapper.reset();
+    else
+        installHotKeys();
 }

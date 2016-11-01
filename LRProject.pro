@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network xml webkitwidgets
+QT       += core gui network xml webkitwidgets printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -35,7 +35,9 @@ SOURCES += main.cpp\
     goldendictLib/qtlocalpeer.cpp \
     goldendictLib/qtlockedfile.cpp \
     goldendictLib/qtlockedfile_win.cpp \
-    articleview.cpp
+    articleview.cpp \
+    subtitlesrtfile.cpp \
+    lrprinter.cpp
 
 HEADERS  += mainwindow.h \
     languagereadingfile.h \
@@ -64,7 +66,9 @@ HEADERS  += mainwindow.h \
     goldendictLib/qtlocalpeer.h \
     goldendictLib/qtlockedfile.h \
     dictionary.h \
-    articleview.h
+    articleview.h \
+    subtitlesrtfile.h \
+    lrprinter.h
 
 FORMS   += mainwindow.ui
 

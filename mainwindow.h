@@ -9,6 +9,7 @@
 #include "goldendictLib/hotkeywrapper.hh"
 //#include "dictionary.h"
 #include "articleview.h"
+#include "subtitlesrtfile.h"
 
 struct Dictionary {
     QString                 name;
@@ -79,6 +80,14 @@ private slots:
     void textSelecteddoubleClicked();
     void on_removeIcon_click();
 
+    void on_actionExport_triggered();
+
+    void on_actionCheck_Memory_triggered();
+
+    void on_actionPrint_triggered();
+
+    void on_checkBox_clicked(bool checked);
+
 private:
 
     enum CommandState{
@@ -89,6 +98,7 @@ private:
 
     //methods
     void readFile(QString fileText);
+    void exportFileWithoutKnownWord(QString fileOri, QString fileText);
     void readMemoryFile(QString fileText);
     void undoCommand(CommandState com);
     void removeWordFromFile(QString word, QString fileText);

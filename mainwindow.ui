@@ -23,7 +23,7 @@
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
      <layout class="QGridLayout" name="gridLayout">
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QTreeWidget" name="treeWidget">
         <property name="editTriggers">
          <set>QAbstractItemView::NoEditTriggers</set>
@@ -43,11 +43,15 @@
         </column>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="3" column="1">
        <widget class="ArticleView" name="article" native="true">
         <property name="autoFillBackground">
          <bool>false</bool>
         </property>
+        <zorder>label</zorder>
+        <zorder>lookup</zorder>
+        <zorder>lookup</zorder>
+        <zorder>label</zorder>
        </widget>
       </item>
       <item row="0" column="0">
@@ -71,7 +75,7 @@
         </item>
        </layout>
       </item>
-      <item row="1" column="0">
+      <item row="2" column="0">
        <widget class="QComboBox" name="comboBox"/>
       </item>
       <item row="0" column="1">
@@ -79,7 +83,7 @@
         <item>
          <widget class="QLabel" name="labelLookup">
           <property name="text">
-           <string>Number maximum words:</string>
+           <string>Limits words:</string>
           </property>
          </widget>
         </item>
@@ -89,6 +93,30 @@
            <string>100</string>
           </property>
          </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox">
+          <property name="text">
+           <string>Active Ctrl+C+C (clipboard copy)</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Look up word:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="lookup"/>
         </item>
        </layout>
       </item>
@@ -118,6 +146,9 @@
     <addaction name="actionOpen"/>
     <addaction name="actionAdd_a_dictionary"/>
     <addaction name="actionSave"/>
+    <addaction name="actionExport"/>
+    <addaction name="actionCheck_Memory"/>
+    <addaction name="actionPrint"/>
     <addaction name="actionExit"/>
    </widget>
    <addaction name="menuFile"/>
@@ -131,7 +162,7 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
   </widget>
   <action name="actionOpen">
@@ -157,6 +188,21 @@
   <action name="actionAdd_a_dictionary">
    <property name="text">
     <string>Add a dictionary</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export ...</string>
+   </property>
+  </action>
+  <action name="actionCheck_Memory">
+   <property name="text">
+    <string>Check Memory</string>
+   </property>
+  </action>
+  <action name="actionPrint">
+   <property name="text">
+    <string>Print...</string>
    </property>
   </action>
  </widget>
